@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NBA Draft Lottery Simulator 2025-26</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0e1a;--surf:#111827;--surf2:#1a2235;--surf3:#222d42;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.15);--txt:#f0f4ff;--muted:#8892a4;--faint:#3d4a5e;--r:#ef4444;--rl:rgba(239,68,68,.12);--rb:rgba(239,68,68,.28);--b:#3b82f6;--bl:rgba(59,130,246,.12);--bb:rgba(59,130,246,.28);--g:#22c55e;--gl:rgba(34,197,94,.12);--gb:rgba(34,197,94,.28);--gold:#f59e0b;--up:#22c55e;--dn:#ef4444;--rad:10px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'Barlow',sans-serif;font-size:15px;min-height:100vh}
+.app{max-width:1100px;margin:0 auto;padding:0 20px 80px}
+.hdr{padding:28px 0 22px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;border-bottom:1px solid var(--border);margin-bottom:26px;flex-wrap:wrap}
+.hlab{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--gold);text-transform:uppercase;margin-bottom:3px}
+.htitle{font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:800;line-height:1}
+.htitle span{color:var(--gold)}
+.hsub{font-size:13px;color:var(--muted);margin-top:5px}
+.hright{display:flex;flex-direction:column;align-items:flex-end;gap:7px}
+.sbadge{background:var(--surf2);border:1px solid var(--border2);border-radius:6px;padding:6px 14px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--muted);letter-spacing:.05em}
+.livedot{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.livedot::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--g);display:block;animation:ldp 2s ease-in-out infinite}
+.livedot.loading::before{background:var(--gold);animation:ldp .9s ease-in-out infinite}
+.livedot.err::before{background:var(--r);animation:none}
+.livedot.warn::before{background:var(--amber,#d97706);animation:none}
+@keyframes ldp{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.72)}}
+.tabs{display:flex;gap:3px;border-bottom:1px solid var(--border);margin-bottom:26px;overflow-x:auto}
+.tab{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:10px 18px;cursor:pointer;border:none;background:none;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s;white-space:nowrap}
+.tab:hover{color:var(--txt)}.tab.on{color:var(--gold);border-bottom-color:var(--gold)}
+.loadstate{display:flex;flex-direction:column;align-items:center;padding:80px 0;gap:14px}
+.spinner{width:34px;height:34px;border:3px solid var(--faint);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loadtxt{font-size:14px;color:var(--muted)}
+.errbox{background:var(--surf);border:1px solid var(--rb);border-radius:var(--rad);padding:24px;text-align:center}
+.errtitle{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--r);margin-bottom:8px}
+.errtxt{font-size:13px;color:var(--muted);line-height:1.7}
+.ggroups{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:26px}
+@media(max-width:720px){.ggroups{grid-template-columns:1fr}}
+.gcard{background:var(--surf);border-radius:var(--rad);border:1px solid var(--border);overflow:hidden}
+.gcardh{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px;border-bottom:1px solid var(--border)}
+.glabel{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:5px}
+.gc1 .glabel{background:var(--rl);color:var(--r);border:1px solid var(--rb)}
+.gc2 .glabel{background:var(--bl);color:var(--b);border:1px solid var(--bb)}
+.gc3 .glabel{background:var(--gl);color:var(--g);border:1px solid var(--gb)}
+.trow{display:flex;align-items:center;border-bottom:1px solid var(--border)}.trow:last-child{border-bottom:none}
+.trow-logo{width:46px;height:46px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.trow-logo img{width:30px;height:30px;object-fit:contain}
+.trow-body{flex:1;min-width:0;padding:8px 4px 8px 0}
+.tname{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trec{font-size:11px;color:var(--muted);margin-top:1px}
+.trow-right{padding:8px 14px 8px 6px;display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.opill{font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;background:var(--surf2);color:var(--muted);border:1px solid var(--border2);white-space:nowrap}
+.arrow{display:inline-flex;align-items:center;gap:3px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;padding:1px 6px;border-radius:4px;white-space:nowrap}
+.arrow.up{background:rgba(34,197,94,.13);color:var(--up);border:1px solid rgba(34,197,94,.28)}
+.arrow.dn{background:rgba(239,68,68,.13);color:var(--dn);border:1px solid rgba(239,68,68,.28)}
+.arrow.same{background:var(--surf2);color:var(--faint);border:1px solid var(--border)}
+.arrow svg{width:9px;height:9px;flex-shrink:0}
+.machine{background:var(--surf);border-radius:14px;border:1px solid var(--border2);padding:20px;margin-bottom:18px}
+.mlabel{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.drum14{background:var(--bg);border-radius:10px;border:1px solid var(--border);padding:14px}
+.drum14-balls{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:12px}
+.nball{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;border:2px solid var(--border2);background:var(--surf2);color:var(--muted);transition:transform .18s,opacity .18s,background .18s,border-color .18s,color .18s;user-select:none;flex-shrink:0}
+.nball.spinning{animation:nbnc .34s ease-in-out infinite alternate}
+@keyframes nbnc{from{transform:translateY(-7px) scale(1.08)}to{transform:translateY(7px) scale(.93)}}
+.nball.popped{background:var(--gold)!important;color:#000!important;border-color:#fbbf24!important;animation:nbpop .36s cubic-bezier(.36,.07,.19,.97) forwards}
+@keyframes nbpop{0%{transform:scale(.25);opacity:0}65%{transform:scale(1.28)}100%{transform:scale(1.15)}}
+.nball.spent{opacity:.14;transform:scale(.78)!important;animation:none!important;transition:none}
+.tray-lbl{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin-bottom:7px}
+.tray{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.tslot{width:50px;height:50px;border-radius:50%;border:2px dashed var(--faint);background:transparent;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--faint);transition:all .22s;flex-shrink:0}
+.tslot.filled{border-style:solid;border-color:#fbbf24;background:var(--gold);color:#000;animation:nbpop .36s cubic-bezier(.36,.07,.19,.97)}
+.tray-sep{font-size:20px;color:var(--faint);padding:0 2px;flex-shrink:0}
+.tray-reveal{display:flex;flex-direction:column;justify-content:center;margin-left:10px;min-width:180px}
+.tray-clbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-bottom:3px}
+.tray-cval{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--muted);margin-bottom:4px}
+.tray-trow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px}
+.tray-trow img{width:28px;height:28px;object-fit:contain;flex-shrink:0}
+.tray-tname{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--txt)}
+.tray-drawing{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--faint)}
+.redraw-note{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--r);background:var(--rl);border:1px solid var(--rb);border-radius:6px;padding:5px 12px;margin-top:8px;display:inline-block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.picklog{display:flex;flex-direction:column;gap:6px;margin-top:14px}
+.pl-row{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:8px;padding:9px 14px;border:1px solid var(--border);animation:fadeIn .3s ease}
+.pl-n{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--faint);width:30px;text-align:center;flex-shrink:0}
+.pl-n.t3{color:var(--gold)}
+.pl-combo{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:var(--faint);min-width:88px;flex-shrink:0}
+.pl-logo{width:28px;height:28px;object-fit:contain;flex-shrink:0}
+.pl-team{font-size:13px;font-weight:600;flex:1}
+.dstatus{min-height:42px;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.dsmain{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700}
+.dssub{font-size:12px;color:var(--muted)}
+.gostrip{display:flex;gap:8px;align-items:center;flex-wrap:wrap;min-height:36px;margin-bottom:10px}
+.gob{display:flex;align-items:center;gap:5px}
+.goslot{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:var(--muted)}
+.gogrp{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;padding:4px 12px;border-radius:7px}
+.gogrp.gg1{background:var(--rl);color:var(--r);border:1px solid var(--rb)}
+.gogrp.gg2{background:var(--bl);color:var(--b);border:1px solid var(--bb)}
+.gogrp.gg3{background:var(--gl);color:var(--g);border:1px solid var(--gb)}
+.goarr{color:var(--faint);font-size:18px}
+.progwrap{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:16px}
+.progbar{height:100%;background:var(--gold);border-radius:2px;transition:width .45s ease}
+.ctrl{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:22px}
+.btn{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:10px 22px;border-radius:7px;cursor:pointer;border:none;transition:all .13s;white-space:nowrap}
+.btn-gold{background:var(--gold);color:#000}.btn-gold:hover{filter:brightness(1.08)}.btn-gold:active{transform:scale(.97)}
+.btn-out{background:transparent;border:1px solid var(--border2);color:var(--txt)}.btn-out:hover{background:var(--surf2)}
+.btn-ghost{background:transparent;border:1px solid var(--faint);color:var(--muted)}.btn-ghost:hover{color:var(--txt);border-color:var(--border2)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.dresults{background:var(--surf);border-radius:var(--rad);border:1px solid var(--border);overflow:hidden;margin-bottom:14px}
+.drow{display:flex;align-items:center;border-bottom:1px solid var(--border);transition:background .13s}
+.drow:last-child{border-bottom:none}.drow:hover{background:var(--surf2)}
+.dpick{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:var(--faint);width:52px;text-align:center;flex-shrink:0;padding:10px 0}
+.dpick.t3{color:var(--gold)}
+.dlogo{width:52px;height:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dlogo img{width:32px;height:32px;object-fit:contain}
+.dinfo{flex:1;min-width:0;padding:10px 8px 10px 0}
+.dname{font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px}
+.drec{font-size:11px;color:var(--muted);margin-top:1px}
+.dcombo{font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--faint);margin-top:2px}
+.dright{padding:10px 16px 10px 8px;display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.dtag{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;padding:2px 9px;border-radius:4px}
+.dtag.dt1{background:var(--rl);color:var(--r);border:1px solid var(--rb)}
+.dtag.dt2{background:var(--bl);color:var(--b);border:1px solid var(--bb)}
+.dtag.dt3{background:var(--gl);color:var(--g);border:1px solid var(--gb)}
+.slabel{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.infocard{background:var(--surf);border-radius:var(--rad);border:1px solid var(--border);padding:20px;margin-bottom:16px}
+.otable{width:100%;border-collapse:collapse}
+.otable th{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:7px 10px;border-bottom:1px solid var(--border);text-align:left}
+.otable td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.otable tr:last-child td{border-bottom:none}.otable tr:hover td{background:var(--surf2)}
+.phasebanner{display:flex;align-items:center;gap:14px;background:var(--surf2);border-radius:8px;border:1px solid var(--border);padding:12px 18px;margin-bottom:16px}
+.phnum{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;color:var(--gold);line-height:1}
+.phtitle{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.phdesc{font-size:12px;color:var(--muted);margin-top:2px}
+.mgcard{background:var(--surf);border-radius:var(--rad);border:1px solid var(--border);padding:16px 20px;margin-bottom:12px;transition:border-color .25s}
+.mgcard.act{border-color:rgba(245,158,11,.35)}
+.mprow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.mpchip{display:flex;align-items:center;gap:6px;background:var(--bg);border-radius:6px;padding:5px 10px;border:1px solid var(--border)}
+.mpnum{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--gold)}
+.mpname{font-size:12px;font-weight:600}
+.mpcombo{font-size:10px;color:var(--faint);font-family:'Barlow Condensed',sans-serif;font-weight:600}
+.histlist{background:var(--surf);border-radius:var(--rad);border:1px solid var(--border);overflow:hidden}
+.hrow{display:flex;align-items:center;border-bottom:1px solid var(--border)}
+.hrow:last-child{border-bottom:none}.hrow:hover{background:var(--surf2)}
+.hn{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--faint);width:36px;text-align:center;flex-shrink:0}
+.hlogo{width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hlogo img{width:28px;height:28px;object-fit:contain}
+.hinfo{flex:1;padding:10px 0 10px 4px}
+.hp1{font-size:13px;font-weight:600}
+.hmeta{font-size:11px;color:var(--muted);margin-top:2px}
+.htime{font-size:11px;color:var(--faint);padding:0 14px;white-space:nowrap}
+.empty{text-align:center;padding:64px 0;color:var(--muted);font-size:14px}
+@keyframes cffall{0%{transform:translateY(-10px) rotate(0);opacity:1}100%{transform:translateY(105vh) rotate(720deg);opacity:0}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hdr">
+    <div>
+      <div class="hlab">Concept Simulator</div>
+      <div class="htitle">NBA Draft <span>Lottery</span></div>
+      <div class="hsub">3-Group System · 14-Ball Combination Draw · Live 2025–26 Standings</div>
+    </div>
+    <div class="hright">
+      <div class="sbadge" id="sbadge">2025–26</div>
+      <div class="livedot loading" id="livedot">Loading standings…</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab on" onclick="sw('ov',this)">Overview</button>
+    <button class="tab" onclick="sw('run',this)">Run Lottery</button>
+    <button class="tab" onclick="sw('step',this)">Step-by-Step</button>
+
+  </div>
+  <div id="main"></div>
+</div>
+<script>
+
+const ALL_COMBOS=(()=>{const c=[];for(let a=1;a<=14;a++)for(let b=a+1;b<=14;b++)for(let cc=b+1;cc<=14;cc++)for(let d=cc+1;d<=14;d++)c.push([a,b,cc,d]);return c;})();
+const VOID_KEY='11-12-13-14';
+const USABLE=ALL_COMBOS.filter(c=>c.join('-')!==VOID_KEY);
+const GROUP_ORDERINGS=[[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
+const GO_ALLOC=[167,167,167,167,166,166];
+const GO_MAP=(()=>{const m={};let p=0;GO_ALLOC.forEach((n,i)=>{for(let j=0;j<n;j++)m[USABLE[p+j].join('-')]=i;p+=n;});return m;})();
+const TEAM_ALLOC=[286,238,190,143,95,48];
+const TEAM_MAP=(()=>{const m={};let p=0;TEAM_ALLOC.forEach((n,ri)=>{for(let j=0;j<n;j++)m[USABLE[p+j].join('-')]=ri;p+=n;});return m;})();
+
+function draw4(){
+  const balls=Array.from({length:14},(_,i)=>i+1);
+  const drawn=[];
+  for(let i=0;i<4;i++){const idx=Math.floor(Math.random()*balls.length);drawn.push(balls.splice(idx,1)[0]);}
+  drawn.sort((a,b)=>a-b);
+  return {balls:drawn,key:drawn.join('-')};
+}
+
+let TEAMS=[],GROUPS=[],HISTORY=[];
+let activeTab='ov',autoRunning=false,MS=null;
+
+// CLIENT FALLBACK STANDINGS
+const RAW_FB=[
+  {abbr:'IND',teamId:1610612754,city:'Indiana',     name:'Pacers',        conf:'E',wins:17,losses:58},
+  {abbr:'WAS',teamId:1610612764,city:'Washington',  name:'Wizards',       conf:'E',wins:17,losses:58},
+  {abbr:'BKN',teamId:1610612751,city:'Brooklyn',    name:'Nets',          conf:'E',wins:18,losses:57},
+  {abbr:'SAC',teamId:1610612758,city:'Sacramento',  name:'Kings',         conf:'W',wins:19,losses:57},
+  {abbr:'UTA',teamId:1610612762,city:'Utah',        name:'Jazz',          conf:'W',wins:21,losses:55},
+  {abbr:'DAL',teamId:1610612742,city:'Dallas',      name:'Mavericks',     conf:'W',wins:24,losses:51},
+  {abbr:'NOP',teamId:1610612740,city:'New Orleans', name:'Pelicans',      conf:'W',wins:25,losses:51},
+  {abbr:'MEM',teamId:1610612763,city:'Memphis',     name:'Grizzlies',     conf:'W',wins:25,losses:50},
+  {abbr:'CHI',teamId:1610612741,city:'Chicago',     name:'Bulls',         conf:'E',wins:29,losses:46},
+  {abbr:'MIL',teamId:1610612749,city:'Milwaukee',   name:'Bucks',         conf:'E',wins:29,losses:45},
+  {abbr:'GSW',teamId:1610612744,city:'Golden State',name:'Warriors',      conf:'W',wins:36,losses:39},
+  {abbr:'POR',teamId:1610612757,city:'Portland',    name:'Trail Blazers', conf:'W',wins:38,losses:38},
+  {abbr:'CHA',teamId:1610612766,city:'Charlotte',   name:'Hornets',       conf:'E',wins:39,losses:36},
+  {abbr:'LAC',teamId:1610612746,city:'LA',          name:'Clippers',      conf:'W',wins:39,losses:36},
+  {abbr:'MIA',teamId:1610612748,city:'Miami',       name:'Heat',          conf:'E',wins:40,losses:36},
+  {abbr:'ORL',teamId:1610612753,city:'Orlando',     name:'Magic',         conf:'E',wins:39,losses:35},
+  {abbr:'PHI',teamId:1610612755,city:'Philadelphia',name:'76ers',         conf:'E',wins:41,losses:34},
+  {abbr:'PHX',teamId:1610612756,city:'Phoenix',     name:'Suns',          conf:'W',wins:42,losses:33},
+];
+const FB_OBLS={IND:{to:'LAC',note:'top-4 or 10-30 protected'},UTA:{to:'OKC',note:'top-8 protected'},POR:{to:'CHI',note:'top-14 protected'},PHI:{to:'OKC',note:'top-4 protected'},NOP:{to:'ATL/MIL',note:'most favorable to ATL'},WAS:{to:'NYK',note:'swap rights'}};
+function buildFallbackTeams(){
+  const t=RAW_FB.map(r=>({...r,fullName:`${r.city} ${r.name}`,winPct:r.wins/(r.wins+r.losses),confW:0,confL:0,confWinPct:0,obligation:FB_OBLS[r.abbr]||null}));
+  t.sort((a,b)=>b.losses!==a.losses?b.losses-a.losses:a.wins-b.wins);
+  return t.slice(0,18).map((r,i)=>({...r,recordRank:i,group:Math.floor(i/6),groupRank:5-(i%6),ballCount:5-(i%6)+1}));
+}
+
+// STANDINGS CACHE — localStorage, daily refresh 11:59 PM PST
+const CACHE_KEY='nba_standings_v1';
+function _cacheExpiry(){
+  const now=new Date(),b=new Date(now);
+  b.setUTCHours(7,59,0,0);
+  return(now>=b?b:new Date(b-86400000)).getTime();
+}
+function getCachedStandings(){
+  try{const c=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');return c&&c.at&&new Date(c.at).getTime()>=_cacheExpiry()?c.data:null;}catch(e){return null;}
+}
+function setCachedStandings(data){
+  try{localStorage.setItem(CACHE_KEY,JSON.stringify({at:new Date().toISOString(),data}));}catch(e){}
+}
+const GN=['Group 1','Group 2','Group 3'];
+const GGC=['gg1','gg2','gg3'],DTC=['dt1','dt2','dt3'],GCLS=['gc1','gc2','gc3'];
+const TIDS={ATL:1610612737,BOS:1610612738,BKN:1610612751,CHA:1610612766,CHI:1610612741,CLE:1610612739,DAL:1610612742,DEN:1610612743,DET:1610612765,GSW:1610612744,HOU:1610612745,IND:1610612754,LAC:1610612746,LAL:1610612747,MEM:1610612763,MIA:1610612748,MIL:1610612749,MIN:1610612750,NOP:1610612740,NYK:1610612752,OKC:1610612760,ORL:1610612753,PHI:1610612755,PHX:1610612756,POR:1610612757,SAC:1610612758,SAS:1610612759,TOR:1610612761,UTA:1610612762,WAS:1610612764};
+
+async function init(){
+  const cached=getCachedStandings();
+  if(cached){
+    TEAMS=cached.teams;
+    GROUPS=[0,1,2].map(g=>TEAMS.filter(t=>t.group===g));
+    const ts=new Date(cached.lastUpdated).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    setDot(cached.isFallback?'warn':'live',cached.isFallback?'Using cached standings':'Standings · '+ts);
+    document.getElementById('sbadge').textContent=cached.season||'2025–26';
+    renderTab(activeTab);
+    return;
+  }
+  try{
+    const res=await fetch('/api/standings');
+    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const data=await res.json();
+    if(!data.success)throw new Error(data.error||'API failure');
+    const resolved=await resolveTies(data.teams,data.tiedPairs);
+    TEAMS=resolved;
+    GROUPS=[0,1,2].map(g=>TEAMS.filter(t=>t.group===g));
+    setCachedStandings({...data,teams:resolved,tiedPairs:[]});
+    const ts=new Date(data.lastUpdated).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    setDot(data.isFallback?'warn':'live',data.isFallback?'Using cached standings — NBA API unavailable':'Live · Updated '+ts);
+    document.getElementById('sbadge').textContent=data.season||'2025–26';
+    renderTab(activeTab);
+  }catch(err){
+    console.error('Standings fetch failed:',err.message);
+    setDot('warn','Using fallback standings');
+  }
+}
+
+const SWAP_KEYS=['teamId','city','name','fullName','abbr','wins','losses','winPct','conf','confW','confL','confWinPct'];
+const teamSnap=t=>Object.fromEntries(SWAP_KEYS.map(k=>[k,t[k]]));
+
+async function resolveTies(teams,pairs){
+  if(!pairs||!pairs.length)return teams;
+  const out=[...teams];
+  for(const pair of pairs){
+    try{
+      const r=await fetch(`/api/h2h?teamA=${pair.teamA.teamId}&teamB=${pair.teamB.teamId}`);
+      if(!r.ok)continue;
+      const h2h=await r.json();
+      if(!h2h.success)continue;
+      const iA=out.findIndex(t=>t.teamId===pair.teamA.teamId);
+      const iB=out.findIndex(t=>t.teamId===pair.teamB.teamId);
+      if(iA===-1||iB===-1)continue;
+      const tA=out[iA],tB=out[iB];
+      let better=h2h.winner&&h2h.status==='complete'?h2h.winner:null;
+      if(!better){const d=tA.confWinPct-tB.confWinPct;better=Math.abs(d)>0.001?(d>0?tA.teamId:tB.teamId):(Math.random()<.5?tA.teamId:tB.teamId);}
+      const bi=better===tA.teamId?iA:iB,wi=better===tA.teamId?iB:iA;
+      if(out[bi].groupRank<out[wi].groupRank){
+        const sB=teamSnap(out[bi]),sW=teamSnap(out[wi]);
+        out[bi]={...out[bi],...sW,movedUp:true};
+        out[wi]={...out[wi],...sB,movedDown:true};
+      }
+    }catch(e){console.warn('H2H fail',e);}
+  }
+  return out;
+}
+
+function sw(tab,el){activeTab=tab;document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');renderTab(tab);}
+function renderTab(tab){const el=document.getElementById('main');if(tab==='ov')renderOv(el);else if(tab==='run')renderRun(el);else if(tab==='step')renderStep(el);}
+
+function renderOv(el){
+  let h='';
+
+  h+=`<div class="infocard" style="margin-bottom:26px">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:10px">How the lottery works</div>
+    <p style="font-size:14px;line-height:1.75;color:var(--txt);margin-bottom:12px">
+      This simulator uses a <strong style="font-weight:600">three-group weighted combination lottery</strong> — a proposed alternative to the NBA's current system. The 18 teams with the worst records are split into three groups of six. The lottery then runs in two phases.
+    </p>
+    <p style="font-size:14px;line-height:1.75;color:var(--txt);margin-bottom:12px">
+      <strong style="font-weight:600">Phase 1 — Group order draw.</strong> A drum containing 14 ping-pong balls numbered 1–14 is used. Four balls are drawn without replacement. The sorted 4-ball combination maps to one of 1,000 pre-assigned combos, which determines the order the three groups will pick in. All six possible orderings have equal odds (~16.7% each).
+    </p>
+    <p style="font-size:14px;line-height:1.75;color:var(--txt);margin-bottom:12px">
+      <strong style="font-weight:600">Phase 2 — In-group picks.</strong> For each group, the same 14-ball drum is used to draw picks 1 through 6 sequentially. Each of the 1,000 combinations is pre-assigned to a team based on record — the team with the <strong style="font-weight:600">best record in the group gets 286 combinations (28.6%)</strong>, down to 48 combinations (4.8%) for the worst record. Once a team wins a pick, their combinations are retired and the drum is drawn again for the next pick.
+    </p>
+    <p style="font-size:14px;line-height:1.75;color:var(--txt)">
+      If the void combination {11·12·13·14} is drawn at any point, it is discarded and the drum is redrawn. Tiebreakers between teams with identical records are resolved using current-season head-to-head record, then conference win percentage, then a coin flip.
+    </p>
+  </div>`;
+
+  h+='<div class="ggroups">';
+  if(GROUPS.length){
+    GROUPS.forEach((grp,gi)=>{
+      h+=`<div class="gcard ${GCLS[gi]}"><div class="gcardh"><span class="glabel">${GN[gi]}</span><span style="font-size:10px;color:var(--muted)">Picks 1–6</span></div>`;
+      grp.forEach(t=>{
+        const combos=TEAM_ALLOC[t.groupRank];
+        h+=`<div class="trow"><div class="trow-logo">${limg(t.abbr,30)}</div><div class="trow-body"><div class="tname">${t.fullName}</div><div class="trec">${t.wins}–${t.losses}</div></div><div class="trow-right"><span class="opill">${combos} combos · ${(combos/10).toFixed(1)}%</span>${arrowBadge(t)}</div></div>`;
+      });
+      h+='</div>';
+    });
+  }else{
+    [0,1,2].forEach(gi=>{
+      h+=`<div class="gcard ${GCLS[gi]}"><div class="gcardh"><span class="glabel">${GN[gi]}</span><span style="font-size:10px;color:var(--muted)">Picks 1–6</span></div>`;
+      for(let i=0;i<6;i++)h+=`<div class="trow"><div class="trow-logo"><div style="width:30px;height:30px;border-radius:50%;background:var(--faint);opacity:.25"></div></div><div class="trow-body"><div style="height:12px;background:var(--faint);border-radius:3px;opacity:.25;margin-bottom:5px;width:${['80%','90%','75%','85%','70%','88%'][i]}"></div><div style="height:10px;background:var(--faint);border-radius:3px;opacity:.18;width:35%"></div></div><div class="trow-right"><span class="opill" style="opacity:.2">—</span></div></div>`;
+      h+='</div>';
+    });
+  }
+  h+='</div>';
+  h+=`<div class="infocard" style="margin-bottom:16px"><div class="slabel" style="margin-bottom:12px">In-group picks — combo allocation (1,000 total per group)</div><table class="otable"><thead><tr><th>Position in group</th><th>Combinations</th><th>Odds (pick #1)</th></tr></thead><tbody>`;
+  ['Best record','2nd best','3rd best','4th best','5th best','Worst record'].forEach((lbl,i)=>{h+=`<tr><td>${lbl}</td><td><strong style="color:var(--gold)">${TEAM_ALLOC[i]}</strong> / 1,000</td><td>${(TEAM_ALLOC[i]/10).toFixed(1)}%</td></tr>`;});
+  h+=`</tbody></table></div>`;
+  h+=`<div class="infocard"><div class="slabel" style="margin-bottom:12px">Group order draw — combo allocation (1,000 total)</div><table class="otable"><thead><tr><th>Order drawn</th><th>Combinations</th><th>Odds</th></tr></thead><tbody>`;
+  GROUP_ORDERINGS.forEach((ord,i)=>{
+    const label=ord.map(g=>`<span class="gogrp ${GGC[g]}" style="font-size:11px;padding:1px 7px">${GN[g]}</span>`).join(' <span style="color:var(--faint)">→</span> ');
+    h+=`<tr><td style="padding:8px 10px"><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">${label}</div></td><td><strong style="color:var(--gold)">${GO_ALLOC[i]}</strong> / 1,000</td><td>${(GO_ALLOC[i]/10).toFixed(1)}%</td></tr>`;
+  });
+  h+=`</tbody></table><div style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.6">14 balls (1–14) in the drum. 4 drawn without replacement, order ignored. The sorted 4-ball combination matches one of 1,000 assigned combos — or triggers a redraw if the void combo {11·12·13·14} appears.</div></div>`;
+  el.innerHTML=h;
+}
+
+function renderRun(el){
+  if(!TEAMS.length){el.innerHTML=`<div class="loadstate"><div class="spinner"></div><div class="loadtxt">Loading standings…</div></div>`;return;}
+  el.innerHTML=`<div class="ctrl"><button class="btn btn-gold" id="btnrun" onclick="startAuto()">▶ Run Full Lottery</button><button class="btn btn-ghost" onclick="resetRun()">↺ Reset</button></div><div id="runbody"><div class="empty">Press Run Full Lottery to draw the 2025–26 draft order</div></div>`;
+}
+function resetRun(){autoRunning=false;const b=document.getElementById('btnrun');if(b)b.disabled=false;renderRun(document.getElementById('main'));}
+
+async function startAuto(){
+  if(autoRunning)return;
+  autoRunning=true;
+  const btnEl=document.getElementById('btnrun');if(btnEl)btnEl.disabled=true;
+  const body=document.getElementById('runbody');
+
+  body.innerHTML=`<div class="progwrap"><div class="progbar" id="aprog" style="width:0%"></div></div>
+    <div class="machine"><div class="mlabel">Phase 1 — Group Order Draw</div>
+      <div class="dstatus" id="apst"><span class="dsmain">Drawing group order…</span></div>
+      ${drumHTML('apdrum')}
+    </div>
+    <div class="gostrip" id="apgo"></div>`;
+
+  await sl(150);
+  const goResult=drawValidGroupOrder();
+  await spinDrum('apdrum',400);
+  await animateDraw('apdrum',goResult.combo);
+  setTrayResult('apdrum',goResult.combo,null,null,goResult.ordering);
+  setSt('apst',goResult.ordering.map(g=>GN[g]).join(' → '),`Combo {${goResult.combo.join('·')}}`);
+  const ordLabel=goResult.ordering.map((gi,pos)=>`<div class="gob"><span class="goslot">${pos+1}.</span><span class="gogrp ${GGC[gi]}">${GN[gi]}</span></div>`).join(`<span class="goarr">→</span>`);
+  document.getElementById('apgo').innerHTML=ordLabel;
+  setProg('aprog',12);
+  await sl(400);
+
+  const slotResults=[];
+  for(let slot=0;slot<3;slot++){
+    const gi=goResult.ordering[slot];
+    const grp=GROUPS[gi];
+    const basePct=12+(slot/3)*88;
+    body.innerHTML+=`<div id="gsec-${slot}"></div>`;
+    const sec=document.getElementById(`gsec-${slot}`);
+    sec.innerHTML=`<div class="machine" style="margin-top:16px"><div class="mlabel">Slot ${slot+1} — ${GN[gi]}</div>
+      <div class="dstatus" id="gpst-${slot}"><span class="dsmain">Drawing picks…</span></div>
+      ${drumHTML(`gdrum-${slot}`)}
+      <div class="picklog" id="glog-${slot}"></div></div>`;
+    await sl(150);
+    const remaining=new Set([0,1,2,3,4,5]);
+    const picks=[];
+    for(let pk=1;pk<=6;pk++){
+      setSt(`gpst-${slot}`,`Drawing pick #${pk}…`,`Overall #${slot*6+pk}`);
+      const res=drawValidTeamPick(remaining);
+      remaining.delete(res.teamRank);
+      await spinDrum(`gdrum-${slot}`,300);
+      await animateDraw(`gdrum-${slot}`,res.combo);
+      const t=grp[res.teamRank];
+      setTrayResult(`gdrum-${slot}`,res.combo,t,gi,null);
+      setSt(`gpst-${slot}`,t.fullName,`{${res.combo.join('·')}} · ${GN[gi]} #${pk} · Overall #${slot*6+pk}`);
+      picks.push(res);
+      appendPickLog(`glog-${slot}`,pk,slot*6+pk,t,gi,res.combo);
+      setProg('aprog',basePct+(pk/6)*(88/3));
+      await sl(220);
+    }
+    slotResults.push({gi,picks});
+    await sl(100);
+  }
+  setProg('aprog',100);
+  const fullOrder=buildFullOrder(goResult.ordering,slotResults);
+  addHist({goResult,slotResults,fullOrder});
+  body.innerHTML+=fullHTML({go:goResult.ordering,goCombo:goResult.combo,fullOrder});
+  autoRunning=false;if(btnEl)btnEl.disabled=false;
+  confetti();
+}
+
+function renderStep(el){
+  if(!TEAMS.length){el.innerHTML=`<div class="loadstate"><div class="spinner"></div><div class="loadtxt">Loading standings…</div></div>`;return;}
+  if(!MS)MS=freshMS();
+  el.innerHTML=`<div class="ctrl"><button class="btn btn-ghost" onclick="resetStep()">↺ Start Over</button></div><div id="stepbody"></div>`;
+  renderStepBody();
+}
+function freshMS(){return{phase:'group_draw',goResult:null,currentSlot:0,slotResults:[],currentPicks:[],remaining:new Set([0,1,2,3,4,5])};}
+function resetStep(){MS=freshMS();renderStep(document.getElementById('main'));}
+
+function renderStepBody(){
+  const body=document.getElementById('stepbody');if(!body)return;
+  const s=MS;let h='';
+  if(s.phase==='group_draw'||s.phase==='group_reveal'){
+    h+=`<div class="phasebanner"><div class="phnum">1</div><div><div class="phtitle">Group Order Draw</div><div class="phdesc">14 balls · draw 4 · 1,000 combos → one of 6 orderings (each ~16.7%)</div></div></div>`;
+    h+=`<div class="machine"><div class="mlabel">Lottery Machine — Group Order</div><div class="dstatus" id="m-gst"><span class="dsmain">${s.goResult?s.goResult.ordering.map(g=>GN[g]).join(' → '):'Ready to draw'}</span></div>${drumHTML('m-gdrm',s.goResult?s.goResult.combo:null)}<div id="m-grd"></div></div>`;
+    if(!s.goResult){
+      h+=`<button class="btn btn-gold" id="m-gobtn" onclick="mDrawGroup()">Draw Group Order</button>`;
+    }else{
+      h+=`<div class="gostrip">`;
+      s.goResult.ordering.forEach((gi,i)=>{if(i>0)h+=`<span class="goarr">→</span>`;h+=`<div class="gob"><span class="goslot">${i+1}.</span><span class="gogrp ${GGC[gi]}">${GN[gi]}</span></div>`;});
+      h+=`</div><button class="btn btn-gold" onclick="mStartTeams()">Continue to Team Draws →</button>`;
+    }
+  }else if(s.phase==='teams'){
+    h+=`<div style="font-size:12px;color:var(--muted);margin-bottom:16px">Group order: <strong style="color:var(--txt)">${s.goResult.ordering.map(g=>GN[g]).join(' → ')}</strong></div>`;
+    s.goResult.ordering.forEach((gi,slot)=>{
+      const done=slot<s.currentSlot||(slot===s.currentSlot&&s.currentPicks.length===6);
+      const act=slot===s.currentSlot;
+      const pend=slot>s.currentSlot;
+      const grp=GROUPS[gi];
+      const result=s.slotResults[slot];
+      h+=`<div class="mgcard ${act?'act':''}"><div style="display:flex;align-items:center;gap:10px;margin-bottom:${pend?0:14}px">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:5px;${gi===0?'background:var(--rl);color:var(--r);border:1px solid var(--rb)':gi===1?'background:var(--bl);color:var(--b);border:1px solid var(--bb)':'background:var(--gl);color:var(--g);border:1px solid var(--gb)'}">${GN[gi]}</span>
+        <span style="font-size:12px;color:${done?'var(--muted)':act?'var(--gold)':'var(--faint)'}">${done?'✓ Complete':act?`Drawing pick #${s.currentPicks.length+1} of 6`:'Pending'}</span>
+      </div>`;
+      if(!pend){
+        h+=`<div class="machine" style="margin-bottom:12px"><div class="mlabel">Lottery Machine — ${GN[gi]}</div><div class="dstatus" id="m-tst-${slot}"><span class="dsmain">${act&&s.currentPicks.length<6?`Pick #${s.currentPicks.length+1}`:'Ready'}</span></div>${drumHTML(`m-tdrm-${slot}`)}<div id="m-trd-${slot}"></div></div>`;
+        if(act&&s.currentPicks.length<6)h+=`<button class="btn btn-gold" id="m-tbtn-${slot}" onclick="mDrawTeam(${slot})">Draw Pick #${s.currentPicks.length+1}</button>`;
+        if(act&&s.currentPicks.length===6){if(slot<2)h+=`<button class="btn btn-gold" onclick="mNextGroup()">Next Group →</button>`;else h+=`<button class="btn btn-gold" onclick="mFinish()">See Final Draft Order →</button>`;}
+        const picks=act?s.currentPicks:(result?result.picks:[]);
+        if(picks.length){
+          h+=`<div class="mprow" style="margin-top:14px">`;
+          picks.forEach((pk,pi)=>{
+            const t=grp[pk.teamRank];const overall=slot*6+(pi+1);
+            h+=`<div class="mpchip"><span class="mpnum">#${overall}</span>${limg(t.abbr,22)}<div><div class="mpname">${t.fullName}</div><div class="mpcombo">{${pk.combo.join('·')}}</div></div>${arrowBadgeMini(t)}</div>`;
+          });
+          h+=`</div>`;
+        }
+      }
+      h+=`</div>`;
+    });
+  }else{
+    h+=fullHTML({go:s.goResult.ordering,goCombo:s.goResult.combo,fullOrder:s.fullOrder});
+    h+=`<div style="margin-top:18px"><button class="btn btn-out" onclick="resetStep()">↺ Run Again</button></div>`;
+  }
+  body.innerHTML=h;
+}
+
+async function mDrawGroup(){
+  const btn=document.getElementById('m-gobtn');if(btn)btn.disabled=true;
+  const id='m-gdrm';let tries=0;
+  while(true){
+    tries++;
+    if(tries>1){document.getElementById('m-grd').innerHTML=`<div class="redraw-note">Void combo — redrawing…</div>`;await sl(600);resetDrum(id);}
+    await spinDrum(id,900);const att=draw4();await animateDraw(id,att.balls);
+    if(att.key===VOID_KEY){setSt('m-gst','Void — redraw!','');await sl(600);resetDrum(id);continue;}
+    const oi=GO_MAP[att.key];if(oi===undefined){resetDrum(id);continue;}
+    MS.goResult={ordering:GROUP_ORDERINGS[oi],combo:att.balls,key:att.key};
+    setTrayResult(id,att.balls,null,null,MS.goResult.ordering);
+    setSt('m-gst',MS.goResult.ordering.map(g=>GN[g]).join(' → '),`Combo {${att.balls.join('·')}}`);
+    document.getElementById('m-grd').innerHTML='';
+    break;
+  }
+  MS.phase='group_reveal';renderStepBody();
+}
+
+function mStartTeams(){MS.phase='teams';MS.currentSlot=0;MS.currentPicks=[];MS.remaining=new Set([0,1,2,3,4,5]);renderStepBody();}
+
+async function mDrawTeam(slot){
+  const btn=document.getElementById(`m-tbtn-${slot}`);if(btn)btn.disabled=true;
+  const id=`m-tdrm-${slot}`;const gi=MS.goResult.ordering[slot];const grp=GROUPS[gi];
+  let tries=0;let res;
+  while(true){
+    tries++;
+    if(tries>1){document.getElementById(`m-trd-${slot}`).innerHTML=`<div class="redraw-note">${tries===2?'Void combo':'Already drawn'} — redraw…</div>`;await sl(500);resetDrum(id);}
+    await spinDrum(id,800);const att=draw4();await animateDraw(id,att.balls);
+    if(att.key===VOID_KEY){setSt(`m-tst-${slot}`,'Void — redraw!','');await sl(500);resetDrum(id);continue;}
+    const ri=TEAM_MAP[att.key];if(ri===undefined){resetDrum(id);continue;}
+    if(!MS.remaining.has(ri)){setSt(`m-tst-${slot}`,'Already picked — redraw!','');await sl(500);resetDrum(id);continue;}
+    MS.remaining.delete(ri);res={teamRank:ri,combo:att.balls,key:att.key};break;
+  }
+  document.getElementById(`m-trd-${slot}`).innerHTML='';
+  const t=grp[res.teamRank];
+  setTrayResult(id,res.combo,t,gi,null);
+  setSt(`m-tst-${slot}`,t.fullName,`{${res.combo.join('·')}}`);
+  MS.currentPicks.push(res);
+  if(MS.currentPicks.length===6)MS.slotResults[slot]={gi,picks:[...MS.currentPicks]};
+  renderStepBody();
+}
+
+function mNextGroup(){MS.currentSlot++;MS.currentPicks=[];MS.remaining=new Set([0,1,2,3,4,5]);renderStepBody();}
+function mFinish(){
+  MS.fullOrder=buildFullOrder(MS.goResult.ordering,MS.slotResults);
+  MS.phase='done';
+  addHist({goResult:MS.goResult,slotResults:MS.slotResults,fullOrder:MS.fullOrder});
+  renderStepBody();confetti();
+}
+
+function renderHist(el){
+  let h=`<div class="ctrl"><button class="btn btn-ghost" onclick="clearHist()">Clear History</button><span style="font-size:13px;color:var(--muted)">${HISTORY.length?HISTORY.length+' sim'+(HISTORY.length>1?'s':''):''}</span></div>`;
+  if(!HISTORY.length){h+=`<div class="empty">Run a lottery to see results here</div>`;el.innerHTML=h;return;}
+  h+=`<div class="histlist">`;
+  HISTORY.slice(0,50).forEach((e,i)=>{
+    const p1=e.data.fullOrder[0];
+    const ord=e.data.goResult.ordering.map(gi=>'G'+(gi+1)).join('→');
+    h+=`<div class="hrow"><div class="hn">${i+1}</div><div class="hlogo">${limg(p1.t.abbr,28)}</div><div class="hinfo"><div class="hp1">#1 Pick: <strong style="color:var(--gold)">${p1.t.fullName}</strong></div><div class="hmeta">Order: ${ord} · Group combo: {${e.data.goResult.combo.join('·')}}</div></div><div class="htime">${e.ts}</div></div>`;
+  });
+  h+=`</div>`;el.innerHTML=h;
+}
+function clearHist(){HISTORY=[];renderHist(document.getElementById('main'));}
+function addHist(data){HISTORY.unshift({ts:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}),data});}
+
+function fullHTML({go,goCombo,fullOrder}){
+  let h=`<div style="margin-top:22px"><div class="slabel">Group order</div><div class="gostrip" style="margin-bottom:6px">`;
+  go.forEach((gi,i)=>{if(i>0)h+=`<span class="goarr">→</span>`;h+=`<div class="gob"><span class="goslot">${i+1}.</span><span class="gogrp ${GGC[gi]}">${GN[gi]}</span></div>`;});
+  h+=`</div><div style="font-size:12px;color:var(--faint);margin-bottom:18px">Winning combo: {${goCombo.join('·')}}</div><div class="slabel">Full draft order — picks 1–18</div><div class="dresults">`;
+  fullOrder.forEach(({t,g,o,combo,gp})=>{
+    const expected=t.groupRank,actual=gp-1;
+    const moved=actual>expected
+      ? `<span class="arrow dn" style="font-size:11px">${aSVG('dn')} Picked later</span>`
+      : actual < expected
+      ? `<span class="arrow up" style="font-size:11px">${aSVG('up')} Picked earlier</span>`
+      : '';
+    h+=`<div class="drow"><div class="dpick ${o<=3?'t3':''}">${o}</div><div class="dlogo">${limg(t.abbr,32)}</div><div class="dinfo"><div class="dname">${t.fullName}</div><div class="drec">${t.wins}–${t.losses}</div><div class="dcombo">{${combo.join('·')}}</div></div><div class="dright"><span class="dtag ${DTC[g]}">${GN[g]}</span>${moved}</div></div>`;
+  });
+  h+=`</div></div>`;return h;
+}
+function buildFullOrder(ordering,slotResults){
+  const f=[];
+  ordering.forEach((gi,slot)=>{
+    const grp=GROUPS[gi];
+    const picks=slotResults[slot]?slotResults[slot].picks:[];
+    picks.forEach((pk,pi)=>f.push({t:grp[pk.teamRank],g:gi,gp:pi+1,o:slot*6+pi+1,combo:pk.combo}));
+  });
+  return f;
+}
+
+function drawValidGroupOrder(){
+  let att;
+  do { att=draw4(); } while(att.key===VOID_KEY || GO_MAP[att.key]===undefined);
+  return {ordering:GROUP_ORDERINGS[GO_MAP[att.key]],combo:att.balls,key:att.key};
+}
+
+function drawValidTeamPick(remaining){
+  let att;
+  do {
+    att=draw4();
+    if(att.key===VOID_KEY) continue;
+    const ri=TEAM_MAP[att.key];
+    if(ri===undefined) continue;
+    if(!remaining.has(ri)) continue;
+    return {teamRank:ri,combo:att.balls,key:att.key};
+  } while(true);
+}
+
+function drumHTML(id,drawnBalls=null){
+  const drawn=new Set(drawnBalls||[]);
+  const balls=Array.from({length:14},(_,i)=>i+1).map(n=>`<div class="nball ${drawn.has(n)?'popped spent':''}" id="${id}-b${n}">${n}</div>`).join('');
+  const slots=[0,1,2,3].map(i=>{const f=drawnBalls&&drawnBalls[i];return`<div class="tslot ${f?'filled':''}" id="${id}-ts${i}">${f||''}</div>${i<3?'<span class="tray-sep">·</span>':''}`;}).join('');
+  const revContent=drawnBalls?`<div class="tray-clbl">Combination</div><div class="tray-cval">{${drawnBalls.join('·')}}</div>`:`<div class="tray-drawing">Awaiting draw…</div>`;
+  return`<div class="drum14"><div class="drum14-balls">${balls}</div><div class="tray-lbl">Drawn combination</div><div class="tray">${slots}<div class="tray-reveal" id="${id}-rev">${revContent}</div></div></div>`;
+}
+
+async function spinDrum(id,ms){
+  const balls=[];for(let n=1;n<=14;n++){const b=document.getElementById(`${id}-b${n}`);if(b&&!b.classList.contains('spent'))balls.push(b);}
+  balls.forEach(b=>b.classList.add('spinning'));
+  await sl(ms);
+  balls.forEach(b=>b.classList.remove('spinning'));
+}
+
+function resetDrum(id){
+  for(let n=1;n<=14;n++){const b=document.getElementById(`${id}-b${n}`);if(b){b.classList.remove('spinning','popped','spent');b.style.opacity='';b.style.transform='';}}
+  for(let i=0;i<4;i++){const s=document.getElementById(`${id}-ts${i}`);if(s){s.className='tslot';s.textContent='';}}
+  const rev=document.getElementById(`${id}-rev`);if(rev)rev.innerHTML=`<div class="tray-drawing">Awaiting draw…</div>`;
+}
+
+async function animateDraw(id,balls){
+  for(let i=0;i<balls.length;i++){
+    const n=balls[i];
+    const ball=document.getElementById(`${id}-b${n}`);
+    if(ball){ball.classList.remove('spinning');ball.classList.add('popped');await sl(80);ball.classList.add('spent');}
+    const slot=document.getElementById(`${id}-ts${i}`);
+    if(slot){slot.className='tslot filled';slot.textContent=n;}
+    await sl(70);
+  }
+  const rev=document.getElementById(`${id}-rev`);
+  if(rev)rev.innerHTML=`<div class="tray-clbl">Combination</div><div class="tray-cval">{${balls.join('·')}}</div>`;
+}
+
+function setTrayResult(id,combo,team,gi,ordering){
+  const rev=document.getElementById(`${id}-rev`);if(!rev)return;
+  let h=`<div class="tray-clbl">Combination</div><div class="tray-cval">{${combo.join('·')}}</div>`;
+  if(team){h+=`<div class="tray-trow" style="margin-top:4px">${limg(team.abbr,28)}<span class="tray-tname">${team.fullName}</span></div>`;}
+  if(ordering){
+    h+=`<div class="tray-trow" style="margin-top:4px">`;
+    ordering.forEach((gIdx,pos)=>{if(pos>0)h+=`<span style="color:var(--faint);font-size:13px">→</span>`;h+=`<span class="gogrp ${GGC[gIdx]}" style="font-size:12px;padding:2px 8px">${GN[gIdx]}</span>`;});
+    h+=`</div>`;
+  }
+  rev.innerHTML=h;
+}
+
+function appendPickLog(logId,pickInGroup,overall,team,gi,combo){
+  const log=document.getElementById(logId);if(!log)return;
+  const row=document.createElement('div');row.className='pl-row';
+  row.innerHTML=`<div class="pl-n ${overall<=3?'t3':''}">${overall}</div><div class="pl-combo">{${combo.join('·')}}</div>${limg(team.abbr,28)}<div class="pl-team">${team.fullName}${arrowBadgeMini(team)}</div>`;
+  log.appendChild(row);
+}
+
+function aSVG(dir){
+  if(dir==='up')return`<svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M5 8V2M2 5l3-3 3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  if(dir==='dn')return`<svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M5 2v6M2 5l3 3 3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  return`<svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M2 5h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
+}
+function arrowBadge(t){if(t.movedUp)return`<span class="arrow up">${aSVG('up')} Moved up</span>`;if(t.movedDown)return`<span class="arrow dn">${aSVG('dn')} Moved down</span>`;return`<span class="arrow same">${aSVG('same')} —</span>`;}
+function arrowBadgeMini(t){if(t.movedUp)return`<span class="arrow up" style="font-size:10px;padding:1px 5px">${aSVG('up')}</span>`;if(t.movedDown)return`<span class="arrow dn" style="font-size:10px;padding:1px 5px">${aSVG('dn')}</span>`;return'';}
+function limg(abbr,sz=30){const id=TIDS[abbr];if(!id)return`<div style="width:${sz}px;height:${sz}px;background:var(--faint);border-radius:50%;flex-shrink:0"></div>`;return`<img src="https://cdn.nba.com/logos/nba/${id}/global/L/logo.svg" style="width:${sz}px;height:${sz}px;object-fit:contain;display:block;flex-shrink:0" onerror="this.style.visibility='hidden'" alt="${abbr}">`;}
+function setSt(id,main,sub=''){const e=document.getElementById(id);if(e)e.innerHTML=`<span class="dsmain">${main}</span>${sub?`<span class="dssub">${sub}</span>`:''}`;}
+function setProg(id,p){const e=document.getElementById(id);if(e)e.style.width=Math.min(100,p)+'%';}
+function setDot(st,txt){const e=document.getElementById('livedot');if(!e)return;e.className='livedot '+st;e.textContent=txt;}
+function sl(ms){return new Promise(r=>setTimeout(r,ms));}
+function confetti(){const cols=['#f59e0b','#ef4444','#3b82f6','#22c55e','#ffffff','#a855f7'];for(let i=0;i<80;i++)setTimeout(()=>{const p=document.createElement('div');p.style.cssText=`position:fixed;top:-10px;left:${Math.random()*100}vw;width:${5+Math.random()*7}px;height:${5+Math.random()*7}px;background:${cols[Math.floor(Math.random()*cols.length)]};border-radius:${Math.random()>.5?'50%':'2px'};pointer-events:none;z-index:9999;animation:cffall ${1.4+Math.random()*2}s linear forwards`;document.body.appendChild(p);setTimeout(()=>p.remove(),3500);},i*22);}
+
+// Pre-populate with fallback so overview renders instantly, then fetch real data
+TEAMS=buildFallbackTeams();
+GROUPS=[0,1,2].map(g=>TEAMS.filter(t=>t.group===g));
+renderTab(activeTab);
+init();
+</script>
+</body></html>

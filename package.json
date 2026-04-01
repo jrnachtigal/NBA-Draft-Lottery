@@ -1,0 +1,7 @@
+{
+  "name": "nba-lottery-simulator",
+  "version": "2.0.0",
+  "description": "NBA Draft Lottery Simulator — 3-group weighted system, live standings",
+  "private": true,
+  "engines": { "node": ">=18" }
+}

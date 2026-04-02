@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -179,10 +180,13 @@ const ALL_COMBOS=(()=>{const c=[];for(let a=1;a<=14;a++)for(let b=a+1;b<=14;b++)
 const VOID_KEY='11-12-13-14';
 const USABLE=ALL_COMBOS.filter(c=>c.join('-')!==VOID_KEY);
 const GROUP_ORDERINGS=[[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
-const GO_ALLOC=[167,167,167,167,166,166];
+const GO_ALLOC=[375,175,225,75,125,25];
 const GO_MAP=(()=>{const m={};let p=0;GO_ALLOC.forEach((n,i)=>{for(let j=0;j<n;j++)m[USABLE[p+j].join('-')]=i;p+=n;});return m;})();
-const TEAM_ALLOC=[286,238,190,143,95,48];
-const TEAM_MAP=(()=>{const m={};let p=0;TEAM_ALLOC.forEach((n,ri)=>{for(let j=0;j<n;j++)m[USABLE[p+j].join('-')]=ri;p+=n;});return m;})();
+const TEAM_ALLOC_NORMAL=[286,242,188,148,88,48];
+const TEAM_ALLOC_INVERTED=[48,88,148,188,242,286];
+function buildTeamMap(alloc){const m={};let p=0;alloc.forEach((n,ri)=>{for(let j=0;j<n;j++)m[USABLE[p+j].join('-')]=ri;p+=n;});return m;}
+const TEAM_MAP_NORMAL=buildTeamMap(TEAM_ALLOC_NORMAL);
+const TEAM_MAP_INVERTED=buildTeamMap(TEAM_ALLOC_INVERTED);
 
 function draw4(){
   const balls=Array.from({length:14},(_,i)=>i+1);
@@ -244,7 +248,7 @@ async function init(){
   const cached=getCachedStandings();
   if(cached){
     TEAMS=cached.teams;
-    GROUPS=[0,1,2].map(g=>TEAMS.filter(t=>t.group===g));
+    GROUPS=[0,1,2].map(g=>TEAMS.filter(t=>t.group===g).sort((a,b)=>a.groupRank-b.groupRank));
     const ts=new Date(cached.lastUpdated).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     setDot(cached.isFallback?'warn':'live',cached.isFallback?'Using cached standings':'Standings · '+ts);
     document.getElementById('sbadge').textContent=cached.season||'2025–26';
@@ -258,7 +262,7 @@ async function init(){
     if(!data.success)throw new Error(data.error||'API failure');
     const resolved=await resolveTies(data.teams,data.tiedPairs);
     TEAMS=resolved;
-    GROUPS=[0,1,2].map(g=>TEAMS.filter(t=>t.group===g));
+    GROUPS=[0,1,2].map(g=>TEAMS.filter(t=>t.group===g).sort((a,b)=>a.groupRank-b.groupRank));
     setCachedStandings({...data,teams:resolved,tiedPairs:[]});
     const ts=new Date(data.lastUpdated).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     setDot(data.isFallback?'warn':'live',data.isFallback?'Using cached standings — NBA API unavailable':'Live · Updated '+ts);
@@ -311,10 +315,10 @@ function renderOv(el){
       This simulator uses a <strong style="font-weight:600">three-group weighted combination lottery</strong> — a proposed alternative to the NBA's current system. The 18 teams with the worst records are split into three groups of six. The lottery then runs in two phases.
     </p>
     <p style="font-size:14px;line-height:1.75;color:var(--txt);margin-bottom:12px">
-      <strong style="font-weight:600">Phase 1 — Group order draw.</strong> A drum containing 14 ping-pong balls numbered 1–14 is used. Four balls are drawn without replacement. The sorted 4-ball combination maps to one of 1,000 pre-assigned combos, which determines the order the three groups will pick in. All six possible orderings have equal odds (~16.7% each).
+      <strong style="font-weight:600">Phase 1 — Group order draw.</strong> A drum containing 14 ping-pong balls numbered 1–14 is used. Four balls are drawn without replacement. The sorted 4-ball combination maps to one of 1,000 pre-assigned combos, which determines the order the three groups will pick in. The orderings are <strong style="font-weight:600">weighted</strong> — Group 1 picking first is most likely (37.5%), while Group 3 picking first is least likely (15%).
     </p>
     <p style="font-size:14px;line-height:1.75;color:var(--txt);margin-bottom:12px">
-      <strong style="font-weight:600">Phase 2 — In-group picks.</strong> For each group, the same 14-ball drum is used to draw picks 1 through 6 sequentially. Each of the 1,000 combinations is pre-assigned to a team based on record — the team with the <strong style="font-weight:600">best record in the group gets 286 combinations (28.6%)</strong>, down to 48 combinations (4.8%) for the worst record. Once a team wins a pick, their combinations are retired and the drum is drawn again for the next pick.
+      <strong style="font-weight:600">Phase 2 — In-group picks.</strong> For each group, the same drum draws picks 1–6. Each team is pre-assigned combinations based on record. <strong style="font-weight:600">Normal mode</strong>: best record gets 286 combos (28.6%), worst gets 48 (4.8%). <strong style="font-weight:600">Inverted mode</strong>: if Group 1 draws the 3rd pick slot — rewarding unlucky tankers — the odds flip: worst record gets 286 combos and best record gets 48.
     </p>
     <p style="font-size:14px;line-height:1.75;color:var(--txt)">
       If the void combination {11·12·13·14} is drawn at any point, it is discarded and the drum is redrawn. Tiebreakers between teams with identical records are resolved using current-season head-to-head record, then conference win percentage, then a coin flip.
@@ -326,7 +330,7 @@ function renderOv(el){
     GROUPS.forEach((grp,gi)=>{
       h+=`<div class="gcard ${GCLS[gi]}"><div class="gcardh"><span class="glabel">${GN[gi]}</span><span style="font-size:10px;color:var(--muted)">Picks 1–6</span></div>`;
       grp.forEach(t=>{
-        const combos=TEAM_ALLOC[t.groupRank];
+        const combos=TEAM_ALLOC_NORMAL[t.groupRank];
         h+=`<div class="trow"><div class="trow-logo">${limg(t.abbr,30)}</div><div class="trow-body"><div class="tname">${t.fullName}</div><div class="trec">${t.wins}–${t.losses}</div></div><div class="trow-right"><span class="opill">${combos} combos · ${(combos/10).toFixed(1)}%</span>${arrowBadge(t)}</div></div>`;
       });
       h+='</div>';
@@ -339,8 +343,8 @@ function renderOv(el){
     });
   }
   h+='</div>';
-  h+=`<div class="infocard" style="margin-bottom:16px"><div class="slabel" style="margin-bottom:12px">In-group picks — combo allocation (1,000 total per group)</div><table class="otable"><thead><tr><th>Position in group</th><th>Combinations</th><th>Odds (pick #1)</th></tr></thead><tbody>`;
-  ['Best record','2nd best','3rd best','4th best','5th best','Worst record'].forEach((lbl,i)=>{h+=`<tr><td>${lbl}</td><td><strong style="color:var(--gold)">${TEAM_ALLOC[i]}</strong> / 1,000</td><td>${(TEAM_ALLOC[i]/10).toFixed(1)}%</td></tr>`;});
+  h+=`<div class="infocard" style="margin-bottom:16px"><div class="slabel" style="margin-bottom:12px">In-group picks — combo allocation (1,000 total per group)</div><table class="otable"><thead><tr><th>Seed (in group)</th><th>Normal combos</th><th>Inverted combos <span style="font-size:10px;color:var(--muted)">(G1 picks 3rd)</span></th></tr></thead><tbody>`;
+  ['1 — Best record','2','3','4','5','6 — Worst record'].forEach((lbl,i)=>{h+=`<tr><td>${lbl}</td><td><strong style="color:var(--gold)">${TEAM_ALLOC_NORMAL[i]}</strong> / 1,000 &nbsp;<span style="color:var(--muted);font-size:11px">${(TEAM_ALLOC_NORMAL[i]/10).toFixed(1)}%</span></td><td><strong style="color:var(--b)">${TEAM_ALLOC_INVERTED[i]}</strong> / 1,000 &nbsp;<span style="color:var(--muted);font-size:11px">${(TEAM_ALLOC_INVERTED[i]/10).toFixed(1)}%</span></td></tr>`;});
   h+=`</tbody></table></div>`;
   h+=`<div class="infocard"><div class="slabel" style="margin-bottom:12px">Group order draw — combo allocation (1,000 total)</div><table class="otable"><thead><tr><th>Order drawn</th><th>Combinations</th><th>Odds</th></tr></thead><tbody>`;
   GROUP_ORDERINGS.forEach((ord,i)=>{
@@ -395,9 +399,12 @@ async function startAuto(){
     await sl(150);
     const remaining=new Set([0,1,2,3,4,5]);
     const picks=[];
+    const inverted=gi===0&&slot===2;
+    const teamMap=inverted?TEAM_MAP_INVERTED:TEAM_MAP_NORMAL;
+    if(inverted)sec.querySelector('.mlabel').textContent=`Slot ${slot+1} — ${GN[gi]} (Inverted Draw)`;
     for(let pk=1;pk<=6;pk++){
       setSt(`gpst-${slot}`,`Drawing pick #${pk}…`,`Overall #${slot*6+pk}`);
-      const res=drawValidTeamPick(remaining);
+      const res=drawValidTeamPick(remaining,teamMap);
       remaining.delete(res.teamRank);
       await spinDrum(`gdrum-${slot}`,300);
       await animateDraw(`gdrum-${slot}`,res.combo);
@@ -500,13 +507,15 @@ function mStartTeams(){MS.phase='teams';MS.currentSlot=0;MS.currentPicks=[];MS.r
 async function mDrawTeam(slot){
   const btn=document.getElementById(`m-tbtn-${slot}`);if(btn)btn.disabled=true;
   const id=`m-tdrm-${slot}`;const gi=MS.goResult.ordering[slot];const grp=GROUPS[gi];
+  const inverted=gi===0&&slot===2;
+  const teamMap=inverted?TEAM_MAP_INVERTED:TEAM_MAP_NORMAL;
   let tries=0;let res;
   while(true){
     tries++;
     if(tries>1){document.getElementById(`m-trd-${slot}`).innerHTML=`<div class="redraw-note">${tries===2?'Void combo':'Already drawn'} — redraw…</div>`;await sl(500);resetDrum(id);}
     await spinDrum(id,800);const att=draw4();await animateDraw(id,att.balls);
     if(att.key===VOID_KEY){setSt(`m-tst-${slot}`,'Void — redraw!','');await sl(500);resetDrum(id);continue;}
-    const ri=TEAM_MAP[att.key];if(ri===undefined){resetDrum(id);continue;}
+    const ri=teamMap[att.key];if(ri===undefined){resetDrum(id);continue;}
     if(!MS.remaining.has(ri)){setSt(`m-tst-${slot}`,'Already picked — redraw!','');await sl(500);resetDrum(id);continue;}
     MS.remaining.delete(ri);res={teamRank:ri,combo:att.balls,key:att.key};break;
   }
@@ -572,12 +581,12 @@ function drawValidGroupOrder(){
   return {ordering:GROUP_ORDERINGS[GO_MAP[att.key]],combo:att.balls,key:att.key};
 }
 
-function drawValidTeamPick(remaining){
+function drawValidTeamPick(remaining,teamMap){
   let att;
   do {
     att=draw4();
     if(att.key===VOID_KEY) continue;
-    const ri=TEAM_MAP[att.key];
+    const ri=teamMap[att.key];
     if(ri===undefined) continue;
     if(!remaining.has(ri)) continue;
     return {teamRank:ri,combo:att.balls,key:att.key};
@@ -653,7 +662,7 @@ function confetti(){const cols=['#f59e0b','#ef4444','#3b82f6','#22c55e','#ffffff
 
 // Pre-populate with fallback so overview renders instantly, then fetch real data
 TEAMS=buildFallbackTeams();
-GROUPS=[0,1,2].map(g=>TEAMS.filter(t=>t.group===g));
+GROUPS=[0,1,2].map(g=>TEAMS.filter(t=>t.group===g).sort((a,b)=>a.groupRank-b.groupRank));
 renderTab(activeTab);
 init();
 </script>

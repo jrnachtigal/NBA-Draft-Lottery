@@ -153,6 +153,10 @@ body{background:var(--bg);color:var(--txt);font-family:'Barlow',sans-serif;font-
 @keyframes cffall{0%{transform:translateY(-10px) rotate(0);opacity:1}100%{transform:translateY(105vh) rotate(720deg);opacity:0}}
 </style>
   <script defer src="/_vercel/insights/script.js"></script>
+  <script type="module">
+    import { injectSpeedInsights } from 'https://cdn.jsdelivr.net/npm/@vercel/speed-insights@1/dist/web.mjs';
+    injectSpeedInsights();
+  </script>
 </head>
 <body>
 <div class="app">
